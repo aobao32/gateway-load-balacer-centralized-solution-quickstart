@@ -1,0 +1,22 @@
+Description:  Create Transit Gateway
+
+Resources:
+  # Create VGW
+  TransitGateway:
+    Type: "AWS::EC2::TransitGateway"
+    Properties:
+      AmazonSideAsn: 65000
+      Description: "TGWforGWLB"
+      AutoAcceptSharedAttachments: enable
+      DefaultRouteTableAssociation: "disable"
+      DefaultRouteTablePropagation: "disable"
+      DnsSupport: "enable"
+      VpnEcmpSupport: "enable"
+      Tags:
+        - Key: Name
+          Value: "TGWforGWLB"
+
+Outputs:
+    TGWID:
+      Description: TGWID
+      Value: !Ref TransitGateway

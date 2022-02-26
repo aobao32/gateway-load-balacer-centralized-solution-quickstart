@@ -1,0 +1,152 @@
+Description:  Create TGW Ingress/Egress Route Table and attachment
+Parameters:
+  TGWID:
+    Type: String
+  VPC1: 
+    Type: String
+  VPC2: 
+    Type: String
+  VPC3: 
+    Type: String
+  VPC4: 
+    Type: String
+  VPC1TGWSubnet1: 
+    Type: String
+  VPC1TGWSubnet2: 
+    Type: String
+  VPC2TGWSubnet1: 
+    Type: String
+  VPC2TGWSubnet2:
+    Type: String
+  VPC3TGWSubnet1: 
+    Type: String
+  VPC3TGWSubnet2: 
+    Type: String
+  VPC4TGWSubnet1: 
+    Type: String
+  VPC4TGWSubnet2: 
+    Type: String
+
+Resources:
+  # ----------------- Create TGW Route Table ---------------------
+  # Ingress Route Table - connect to application VPC
+  IngressTransitGatewayRouteTable:
+    Type: "AWS::EC2::TransitGatewayRouteTable"
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: Ingress
+      TransitGatewayId: !Ref TGWID
+  # Egress Route Table - connect to virtual appliance VPC
+  EgressTransitGatewayRouteTable:
+    Type: "AWS::EC2::TransitGatewayRouteTable"
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: Egress
+      TransitGatewayId: !Ref TGWID
+
+  # ----------------- TGW Attachment ---------------------
+  # Attachment for Access VPC
+  TransitGatewayAttachment1:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      VpcId: !Ref VPC1
+      TransitGatewayId: !Ref TGWID
+      SubnetIds: 
+        - !Ref VPC1TGWSubnet1
+        - !Ref VPC1TGWSubnet2
+      Tags: 
+        - Key: Name
+          Value: AccessVPC
+  # Attachment for Application VPC
+  TransitGatewayAttachment2:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      VpcId: !Ref VPC2
+      TransitGatewayId: !Ref TGWID
+      SubnetIds: 
+        - !Ref VPC2TGWSubnet1
+        - !Ref VPC2TGWSubnet2
+      Tags: 
+        - Key: Name
+          Value: VPC2-ApplicationVPC
+  TransitGatewayAttachment3:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      VpcId: !Ref VPC3
+      TransitGatewayId: !Ref TGWID
+      SubnetIds: 
+        - !Ref VPC3TGWSubnet1
+        - !Ref VPC3TGWSubnet2
+      Tags: 
+        - Key: Name
+          Value: VPC3-ApplicationVPC
+  TransitGatewayAttachment4:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      VpcId: !Ref VPC4
+      TransitGatewayId: !Ref TGWID
+      SubnetIds: 
+        - !Ref VPC4TGWSubnet1
+        - !Ref VPC4TGWSubnet2
+      Tags: 
+        - Key: Name
+          Value: VPC4-ApplicationVPC
+
+  # ----------------- TGW Route Table mapping to TGW Attachment ---------------------
+  # Ingress Route Table - connect to application VPC
+  # for VPC 2 
+  IngressVpcTgwAssociation2:
+    Type: "AWS::EC2::TransitGatewayRouteTableAssociation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment2
+      TransitGatewayRouteTableId: !Ref IngressTransitGatewayRouteTable
+  # for VPC 3
+  IngressVpcTgwAssociation3:
+    Type: "AWS::EC2::TransitGatewayRouteTableAssociation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment3
+      TransitGatewayRouteTableId: !Ref IngressTransitGatewayRouteTable
+  # for VPC 4 
+  IngressVpcTgwAssociation4:
+    Type: "AWS::EC2::TransitGatewayRouteTableAssociation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment4
+      TransitGatewayRouteTableId: !Ref IngressTransitGatewayRouteTable
+  # Egress Route Table - connect to Virtual Appliance VPC
+  # for VPC 1
+  EgressVpcTgwAssociation1:
+    Type: "AWS::EC2::TransitGatewayRouteTableAssociation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment1
+      TransitGatewayRouteTableId: !Ref EgressTransitGatewayRouteTable
+
+  # ----------------- Add Ingress/Egress Route ---------------------
+  # Add default route to virtual appliance VPC
+  IngressTGWDefaultRoute:
+    Type: "AWS::EC2::TransitGatewayRoute"
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment1
+      TransitGatewayRouteTableId: !Ref IngressTransitGatewayRouteTable
+  # Propagate route to Appliance VPC2/3/4
+  # VPC 2
+  EgressTGWDefaultRoute2:
+    Type: "AWS::EC2::TransitGatewayRouteTablePropagation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment2
+      TransitGatewayRouteTableId: !Ref EgressTransitGatewayRouteTable
+  # VPC 3
+  EgressTGWDefaultRoute3:
+    Type: "AWS::EC2::TransitGatewayRouteTablePropagation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment3
+      TransitGatewayRouteTableId: !Ref EgressTransitGatewayRouteTable
+  # VPC 4
+  EgressTGWDefaultRoute4:
+    Type: "AWS::EC2::TransitGatewayRouteTablePropagation"
+    Properties:
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment4
+      TransitGatewayRouteTableId: !Ref EgressTransitGatewayRouteTable
+

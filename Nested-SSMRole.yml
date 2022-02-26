@@ -1,0 +1,34 @@
+Description:  SSM Role for all
+
+Resources:
+  SSMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      Path: /
+      RoleName: !Join ['-', ['AccessVPC-EC2SSM', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+      Tags:
+        - Key: Name
+          Value: !Join ['-', ['AccessVPC-EC2SSM', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+  EC2SSMRole:
+    Type: "AWS::IAM::InstanceProfile"
+    DependsOn: SSMRole
+    Properties:
+      InstanceProfileName: !Join ['-', ['AccessVPC-EC2SSM', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+      Path: "/"
+      Roles:
+        -
+          Ref: "SSMRole"
+
+Outputs:
+    SSMRole:
+      Value: !Ref EC2SSMRole

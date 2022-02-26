@@ -1,0 +1,346 @@
+Description:  This template for Application VPC - VPC2
+
+Parameters:
+  SSMIAMRole:
+    Description: SSM IAM Role passed from ssm stack 
+    Type: String
+  EC2KEY:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  ApplicationServerInstanceType:
+    Description: Choose instance type for application server in private subnet 
+    Type: String
+    Default: t4g.micro
+    AllowedValues:
+      - t4g.micro
+      - t4g.small
+      - c6g.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  JumpServerCIDR:  # Jump Server CIDR in Shared VPC 
+    Description: Please enter the JumpServer CIDR in Shared VPC
+    Type: String
+    Default: 10.1.0.0/16
+  Arm64AmiId:
+    Type: String
+    Default: ami-004fe950390345df6
+  # Define VPC2
+  VPC2CIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.2.0.0/16
+  VPC2TGWSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.2.1.0/24
+  VPC2TGWSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.2.2.0/24
+  VPC2PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.2.101.0/24
+  VPC2PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.2.102.0/24
+
+Resources:
+  # VPC and IGW
+  VPC2:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPC2CIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: VPC2
+  # 4 subnets
+  VPC2TGWSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC2
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref VPC2TGWSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: VPC2TGW1
+  VPC2TGWSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC2
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref VPC2TGWSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: VPC2TGW2
+  VPC2PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC2
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref VPC2PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: VPC2Private1
+  VPC2PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC2
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref VPC2PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: VPC2Private2
+  # TGW Rout Table
+  VPC2TGWRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC2
+      Tags:
+        - Key: Name
+          Value: VPC2TGW1
+  VPC2TGWSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC2TGWRouteTable1
+      SubnetId: !Ref VPC2TGWSubnet1
+  VPC2TGWRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC2
+      Tags:
+        - Key: Name
+          Value: VPC2TGW2
+  VPC2TGWSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC2TGWRouteTable2
+      SubnetId: !Ref VPC2TGWSubnet2
+  # Private Route table
+  VPC2PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC2
+      Tags:
+        - Key: Name
+          Value: VPC2Private1
+  VPC2PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC2PrivateRouteTable1
+      SubnetId: !Ref VPC2PrivateSubnet1
+  VPC2PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC2
+      Tags:
+        - Key: Name
+          Value: VPC2Private2
+  VPC2PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC2PrivateRouteTable2
+      SubnetId: !Ref VPC2PrivateSubnet2
+
+  # Security Group
+  VPC2SecurtiyGroup1:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: VPC2PrivateSubnet2
+    Properties:
+      GroupName: VPC2 Application Server
+      GroupDescription: VPC2 Application Server
+      VpcId: !Ref VPC2
+      SecurityGroupIngress:
+        - IpProtocol: tcp # Allow SSH from JumpServer in Shared VPC
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref JumpServerCIDR
+          Description: Allow SSH from JumpServer in Shared VPC
+        - IpProtocol: tcp # allow Web Service from anywhere
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+          Description: Allow Web Service from Shared VPC
+        - IpProtocol: icmp # allow ping from anywhere
+          FromPort: '8'
+          ToPort: '-1'
+          CidrIp: 0.0.0.0/0
+          Description: Allow Ping from anywhere
+      Tags:
+        - Key: Name
+          Value: VPC02 Application Server
+          
+  # Security Group for SSM endpoint
+  VPC2SecurtiyGroup2:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: VPC2PrivateSubnet2
+    Properties:
+      GroupName: VPC2SSMEndpoint
+      GroupDescription: VPC2SSMEndpoint
+      VpcId: !Ref VPC2
+      SecurityGroupIngress:
+        - IpProtocol: tcp 
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: !Ref VPC2CIDR
+          Description: VPC2SSMEndpoint
+      Tags:
+        - Key: Name
+          Value: VPC2SSMEndpoint
+  # Session Manager VPC Endpoint for private network
+  VPC2SSMEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: VPC2SecurtiyGroup2
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: '*'
+            Resource: '*'
+      PrivateDnsEnabled: true
+      SecurityGroupIds: 
+        - !Ref VPC2SecurtiyGroup2
+      ServiceName: !Join 
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ssm
+      SubnetIds: 
+        - !Ref VPC2PrivateSubnet1
+        - !Ref VPC2PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC2
+  # Session Manager VPC Endpoint for private network
+  VPC2SSMMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: VPC2SecurtiyGroup2
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: '*'
+            Resource: '*'
+      PrivateDnsEnabled: true
+      SecurityGroupIds: 
+        - !Ref VPC2SecurtiyGroup2
+      ServiceName: !Join 
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ssmmessages
+      SubnetIds: 
+        - !Ref VPC2PrivateSubnet1
+        - !Ref VPC2PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC2
+
+  # Application Server 1
+  VPC2VM1:
+    Type: 'AWS::EC2::Instance'
+    DependsOn: VPC2SecurtiyGroup1
+    Properties:
+      KeyName: !Ref EC2KEY
+      ImageId: !Ref Arm64AmiId
+      InstanceType: !Ref ApplicationServerInstanceType
+      IamInstanceProfile: !Ref SSMIAMRole
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      SubnetId: !Ref VPC2PrivateSubnet1
+      Monitoring: true
+      BlockDeviceMappings: # Use gp3 as root disk @2021-01-31
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+      SecurityGroupIds:
+        - !Ref VPC2SecurtiyGroup1
+      Tags:
+        - Key: Name
+          Value: VPC2-Application1
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #! /bin/bash
+            - |
+              yum install httpd -y
+            - |
+              systemctl restart httpd
+            - |
+              systemctl enable httpd
+            - |
+              yum update -y
+            - |+
+
+  # Application Server 2
+  VPC2VM2:
+    Type: 'AWS::EC2::Instance'
+    DependsOn: VPC2SecurtiyGroup1
+    Properties:
+      KeyName: !Ref EC2KEY
+      ImageId: !Ref Arm64AmiId
+      InstanceType: !Ref ApplicationServerInstanceType
+      IamInstanceProfile: !Ref SSMIAMRole
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      SubnetId: !Ref VPC2PrivateSubnet2
+      Monitoring: true
+      BlockDeviceMappings: # Use gp3 as root disk @2021-01-31
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+      SecurityGroupIds:
+        - !Ref VPC2SecurtiyGroup1
+      Tags:
+        - Key: Name
+          Value: VPC2-Application2
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #! /bin/bash
+            - |
+              yum install httpd -y
+            - |
+              systemctl restart httpd
+            - |
+              systemctl enable httpd
+            - |
+              yum update -y
+            - |+
+
+Outputs:
+    VPC2:
+      Value: !Ref VPC2
+    VPC2TGWSubnet1:
+      Value: !Ref VPC2TGWSubnet1
+    VPC2TGWSubnet2:
+      Value: !Ref VPC2TGWSubnet2
+    VPC2PrivateSubnet1:
+      Value: !Ref VPC2PrivateSubnet1
+    VPC2PrivateSubnet2:
+      Value: !Ref VPC2PrivateSubnet2
+    VPC2TGWRouteTable1:
+      Value: !Ref VPC2TGWRouteTable1
+    VPC2TGWRouteTable2:
+      Value: !Ref VPC2TGWRouteTable2
+    VPC2PrivateRouteTable1:
+      Value: !Ref VPC2PrivateRouteTable1
+    VPC2PrivateRouteTable2:
+      Value: !Ref VPC2PrivateRouteTable2
+    VPC2PrivateIP1:
+      Value: !GetAtt VPC2VM1.PrivateIp
+    VPC2PrivateIP2:
+      Value: !GetAtt VPC2VM2.PrivateIp

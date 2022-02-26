@@ -1,0 +1,615 @@
+Description:  This template for AccessVPC - VPC1
+
+Parameters:
+  SSMIAMRole:
+    Description: SSM IAM Role passed from ssm stack 
+    Type: String
+  EC2KEY:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  VirtualApplianceServerInstanceType:
+    Description: Choose instance type for virtual appliance server.
+    Type: String
+    Default: t4g.small
+    AllowedValues:
+      - t4g.micro
+      - t4g.small
+      - c6g.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  JumpServerInstanceType:
+    Description: Choose instance type for jumpserver
+    Type: String
+    Default: t4g.micro
+    AllowedValues:
+      - t4g.micro
+      - t4g.small
+      - c4g.medium
+      - c6g.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  Arm64AmiId: 
+    Type: String
+    Default: ami-004fe950390345df6
+  # JumpServer allow list
+  JumpServerAllowList:
+    Description: Please enter the CIDR that allows to connect to JumpServer
+    Type: String
+    Default: 52.82.200.0/24
+  VPC1CIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.1.0.0/16
+  VPC1NATSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.1.1.0/24
+  VPC1NATSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.1.2.0/24
+  VPC1ApplianceSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.1.101.0/24
+  VPC1ApplianceSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.1.102.0/24
+  VPC1TGWSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.1.201.0/24
+  VPC1TGWSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.1.202.0/24
+  # Application VPC CIDR
+  VPC2CIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.2.0.0/16
+  VPC3CIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.3.0.0/16
+  VPC4CIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.4.0.0/16
+
+Resources:
+  # VPC and IGW
+  VPC1:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPC1CIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: AccessVPC
+  VPC1InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: AccessVPC
+  VPC1InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: VPC1InternetGateway
+    Properties:
+      InternetGatewayId: !Ref VPC1InternetGateway
+      VpcId: !Ref VPC1
+  # EIP For NAT
+  VPC1EIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: AccessVPC-AZ1-NAT
+  VPC1EIP2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: AccessVPC-AZ2-NAT
+  # EIP for JumpServer
+  VPC1EIP3:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: AccessVPC-JumpServer
+
+  # 6 subnets
+  VPC1NATSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref VPC1NATSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: AccessVPC-NATSubnet1
+  VPC1NATSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref VPC1NATSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: AccessVPC-NATSubnet2
+  VPC1ApplianceSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref VPC1ApplianceSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: AccessVPC-ApplianceSubnet1
+  VPC1ApplianceSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref VPC1ApplianceSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: AccessVPC-ApplianceSubnet2
+  VPC1TGWSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref VPC1TGWSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: AccessVPC-TGWSubnet1
+  VPC1TGWSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref VPC1TGWSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: AccessVPC-TGWSubnet2  
+
+  # NAT Gateway
+  VPC1NATGateway1:
+    DependsOn: VPC1NATSubnet1
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt VPC1EIP1.AllocationId
+      SubnetId: !Ref VPC1NATSubnet1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-NAT1
+  VPC1NATGateway2:
+    DependsOn: VPC1NATSubnet2
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt VPC1EIP2.AllocationId
+      SubnetId: !Ref VPC1NATSubnet2
+      Tags:
+        - Key: Name
+          Value: AccessVPC-NAT2
+
+  # NATSubnet Routetable
+  # AZ1
+  VPC1NATSubnet1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-NATSubnet1
+  VPC1NATSubnet1Route:
+    Type: AWS::EC2::Route
+    DependsOn: VPC1InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref VPC1NATSubnet1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPC1InternetGateway
+  VPC1NATSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1NATSubnet1RouteTable
+      SubnetId: !Ref VPC1NATSubnet1
+  # AZ2
+  VPC1NATSubnet2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-NATSubnet2
+  VPC1NATSubnet2Route:
+    Type: AWS::EC2::Route
+    DependsOn: VPC1InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref VPC1NATSubnet2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPC1InternetGateway
+  VPC1NATSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1NATSubnet2RouteTable
+      SubnetId: !Ref VPC1NATSubnet2
+
+  # ApplianceSubnet Routetable
+  # AZ1 
+  VPC1ApplianceSubnet1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-ApplianceSubnet1
+  VPC1ApplianceSubnet1Route:
+    Type: AWS::EC2::Route
+    DependsOn: VPC1NATGateway1
+    Properties:
+      RouteTableId: !Ref VPC1ApplianceSubnet1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref VPC1NATGateway1
+  VPC1ApplianceSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1ApplianceSubnet1RouteTable
+      SubnetId: !Ref VPC1ApplianceSubnet1
+  # AZ2
+  VPC1ApplianceSubnet2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-ApplianceSubnet2
+  VPC1ApplianceSubnet2Route:
+    Type: AWS::EC2::Route
+    DependsOn: VPC1NATGateway2
+    Properties:
+      RouteTableId: !Ref VPC1ApplianceSubnet2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref VPC1NATGateway2
+  VPC1ApplianceSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1ApplianceSubnet2RouteTable
+      SubnetId: !Ref VPC1ApplianceSubnet2
+
+  # TGWSubnet Routetable
+  # AZ1 
+  VPC1TGWSubnet1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-TGWSubnet1
+  VPC1TGWSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1TGWSubnet1RouteTable
+      SubnetId: !Ref VPC1TGWSubnet1
+  # AZ2
+  VPC1TGWSubnet2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-TGWSubnet2
+  VPC1TGWSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1TGWSubnet2RouteTable
+      SubnetId: !Ref VPC1TGWSubnet2
+
+  # Security Group for Jump Server
+  VPC1SecurtiyGroup1:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: VPC1NATSubnet1
+    Properties:
+      GroupName: AccessVPC-JumpServer
+      GroupDescription: AccessVPC-JumpServer
+      VpcId: !Ref VPC1
+      SecurityGroupIngress:
+        - IpProtocol: tcp # Allow SSH from JumpServer SecurityGroupID in VPC1
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref JumpServerAllowList
+          Description: Allow SSH from MyIP, please update it after creation
+      Tags:
+        - Key: Name
+          Value: AccessVPC-JumpServer
+
+  # Jump Server
+  VPC1VM1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: !Ref EC2KEY
+      ImageId: !Ref Arm64AmiId
+      InstanceType: !Ref JumpServerInstanceType
+      IamInstanceProfile: !Ref SSMIAMRole
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      SubnetId: !Ref VPC1NATSubnet1
+      Monitoring: true
+      BlockDeviceMappings: # Use gp3 as root disk @2021-01-31
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+      SecurityGroupIds:
+        - !Ref VPC1SecurtiyGroup1
+      Tags:
+        - Key: Name
+          Value: AccessVPC-JumpServer
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #! /bin/bash
+            - |
+              yum update -y
+            - |+
+
+  # JumpServer EIP
+  VPC1EIP3assignment:
+    Type: AWS::EC2::EIPAssociation
+    DependsOn: VPC1VM1
+    Properties:
+      InstanceId: !Ref VPC1VM1
+      EIP: !Ref VPC1EIP3
+
+  # Security Group for Virtual Appliance
+  VPC1SecurtiyGroup2:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: VPC1NATSubnet1
+    Properties:
+      GroupName: GWLBVirtualAppliance
+      GroupDescription: GWLBVirtualAppliance
+      VpcId: !Ref VPC1
+      SecurityGroupIngress:
+        - IpProtocol: tcp 
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: !Ref VPC1CIDR
+          Description: Allow 80 from AccessVPC
+        - IpProtocol: tcp 
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref VPC1CIDR
+          Description: Allow 22 from AccessVPC - used for Virtual Appliance Configuration
+        - IpProtocol: udp
+          FromPort: '6081'
+          ToPort: '6081'
+          CidrIp: !Ref VPC1CIDR
+          Description: Allow Geneve UDP 6081 from AccessVPC
+      Tags:
+        - Key: Name
+          Value:  GWLBVirtualAppliance
+
+  # Virtual Appliance Server 1
+  VPC1VM2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: !Ref EC2KEY
+      ImageId: !Ref Arm64AmiId
+      InstanceType: !Ref VirtualApplianceServerInstanceType
+      IamInstanceProfile: !Ref SSMIAMRole
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      SubnetId: !Ref VPC1ApplianceSubnet1
+      Monitoring: true
+      BlockDeviceMappings: # Use gp3 as root disk @2021-01-31
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+      SecurityGroupIds:
+        - !Ref VPC1SecurtiyGroup2
+      Tags:
+        - Key: Name
+          Value: AccessVPC-VirtualAppliance1
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #! /bin/bash
+            - |
+              yum update -y
+            - |
+              pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
+            - |
+              pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+            - |
+              pip3 install pyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
+            - |
+              yum install git -y
+            - |
+              git clone https://github.com/sentialabs/geneve-proxy.git
+            - |
+              mv geneve-proxy /root/
+            - |+
+
+  # Virtual Appliance Server 2
+  VPC1VM3:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: !Ref EC2KEY
+      ImageId: !Ref Arm64AmiId
+      InstanceType: !Ref VirtualApplianceServerInstanceType
+      IamInstanceProfile: !Ref SSMIAMRole
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      SubnetId: !Ref VPC1ApplianceSubnet2
+      Monitoring: true
+      BlockDeviceMappings: # Use gp3 as root disk @2021-01-31
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+      SecurityGroupIds:
+        - !Ref VPC1SecurtiyGroup2
+      Tags:
+        - Key: Name
+          Value: AccessVPC-VirtualAppliance2
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #! /bin/bash
+            - |
+              yum update -y
+            - |
+              pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
+            - |
+              pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+            - |
+              pip3 install pyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
+            - |
+              yum install git -y
+            - |
+              git clone https://github.com/sentialabs/geneve-proxy.git
+            - |
+              mv geneve-proxy /root/
+            - |+
+
+  # -------------------------- GWLB -----------------------
+  GWLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Join ['-', ['GWLB', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+      Type: gateway
+      Tags:
+        - Key: Name
+          Value: !Join ['-', ['GWLB', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+      Subnets: 
+        - !Ref VPC1ApplianceSubnet1
+        - !Ref VPC1ApplianceSubnet2
+      LoadBalancerAttributes: 
+        - Key: load_balancing.cross_zone.enabled
+          Value: true
+
+  GWLBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Join ['-', ['GWLB', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+      Port: 6081
+      Protocol: GENEVE
+      HealthCheckPort: "22"
+      HealthCheckProtocol: "TCP"
+      HealthCheckIntervalSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: 20
+      VpcId: !Ref VPC1
+      TargetType: instance
+      Targets: 
+        - Id: !Ref VPC1VM2
+        - Id: !Ref VPC1VM3
+      Tags:
+        - Key: Name
+          Value: !Join ['-', ['GWLB', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref GWLBTargetGroup
+      LoadBalancerArn: !Ref GWLB
+
+  # -------------------------- GWLB Endpoint -----------------------
+  GWLBVpcEndpointService:
+    Type: AWS::EC2::VPCEndpointService
+    DependsOn: GWLB
+    Properties:
+      GatewayLoadBalancerArns: 
+        - !Ref GWLB
+      AcceptanceRequired: false
+
+  GwlbVpcEndpoint1:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: GWLBVpcEndpointService
+    Properties:
+      VpcId: !Ref VPC1
+      ServiceName: !Join
+          - ''
+          - - !Sub 'cn.com.amazonaws.vpce.${AWS::Region}.'
+            - !Ref GWLBVpcEndpointService
+      VpcEndpointType: GatewayLoadBalancer
+      SubnetIds:
+        - !Ref VPC1ApplianceSubnet1
+
+  GwlbVpcEndpoint2:
+    Type: AWS::EC2::VPCEndpoint
+    DependsOn: GWLBVpcEndpointService
+    Properties:
+      VpcId: !Ref VPC1
+      ServiceName: !Join
+          - ''
+          - - !Sub 'cn.com.amazonaws.vpce.${AWS::Region}.'
+            - !Ref GWLBVpcEndpointService
+      VpcEndpointType: GatewayLoadBalancer
+      SubnetIds:
+        - !Ref VPC1ApplianceSubnet2
+
+Outputs:
+    VPC1:
+      Value: !Ref VPC1
+    # Subnet
+    VPC1NAT1Subnet1:
+      Value: !Ref VPC1NATSubnet1
+    VPC1NAT2Subnet2:
+      Value: !Ref VPC1NATSubnet2
+    VPC1ApplianceSubnet1:
+      Value: !Ref VPC1ApplianceSubnet1
+    VPC1ApplianceSubnet2:
+      Value: !Ref VPC1ApplianceSubnet2
+    VPC1TGWSubnet1:
+      Value: !Ref VPC1TGWSubnet1
+    VPC1TGWSubnet2:
+      Value: !Ref VPC1TGWSubnet2
+    # Route Table
+    VPC1NATSubnet1RouteTable:
+      Value: !Ref VPC1NATSubnet1RouteTable
+    VPC1NATSubnet2RouteTable:
+      Value: !Ref VPC1NATSubnet2RouteTable
+    VPC1ApplianceSubnet1RouteTable:
+      Value: !Ref VPC1ApplianceSubnet1RouteTable
+    VPC1ApplianceSubnet2RouteTable:
+      Value: !Ref VPC1ApplianceSubnet2RouteTable
+    VPC1TGWSubnet1RouteTable:
+      Value: !Ref VPC1TGWSubnet1RouteTable
+    VPC1TGWSubnet2RouteTable:
+      Value: !Ref VPC1TGWSubnet2RouteTable
+    # Jump Server
+    VPC1JumpServerEIP: # 堡垒机公网IP
+      Value: !Ref VPC1EIP3
+    VPC1JumpServerPrivateIP: # 堡垒机 Private IP
+      Value: !GetAtt VPC1VM1.PrivateIp
+    VPC1JumpServerSecurityGroup:
+      Value: !Ref VPC1SecurtiyGroup1
+    VPC1EndpointService:
+      Value: !Ref GWLBVpcEndpointService
+    GwlbVpcEndpoint1:
+      Value: !Ref GwlbVpcEndpoint1
+    GwlbVpcEndpoint2:
+      Value: !Ref GwlbVpcEndpoint2

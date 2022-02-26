@@ -1,0 +1,232 @@
+Description:  Add route for VPC
+
+Parameters:
+  TGWID:
+    Type: String
+  # VPC CIDR
+  VPC1CIDR:
+    Type: String
+  VPC2CIDR:
+    Type: String
+  VPC3CIDR:
+    Type: String
+  VPC4CIDR:
+    Type: String
+  # VPC 1 Route Table
+  VPC1NATSubnet1RouteTable: 
+    Type: String
+  VPC1NATSubnet2RouteTable: 
+    Type: String
+  VPC1ApplianceSubnet1RouteTable: 
+    Type: String
+  VPC1ApplianceSubnet2RouteTable: 
+    Type: String
+  VPC1TGWSubnet1RouteTable: 
+    Type: String
+  VPC1TGWSubnet2RouteTable: 
+    Type: String
+  # VPC 2 Route Table
+  VPC2TGWRouteTable1: 
+    Type: String
+  VPC2TGWRouteTable2: 
+    Type: String
+  VPC2PrivateRouteTable1: 
+    Type: String
+  VPC2PrivateRouteTable2: 
+    Type: String
+  # VPC 3 Route Table
+  VPC3TGWRouteTable1: 
+    Type: String
+  VPC3TGWRouteTable2: 
+    Type: String
+  VPC3PrivateRouteTable1: 
+    Type: String
+  VPC3PrivateRouteTable2: 
+    Type: String
+  # VPC 4
+  VPC4TGWRouteTable1: 
+    Type: String
+  VPC4TGWRouteTable2: 
+    Type: String
+  VPC4PrivateRouteTable1: 
+    Type: String
+  VPC4PrivateRouteTable2: 
+    Type: String
+  # GWLB Endpoint
+  GwlbVpcEndpoint1:
+    Type: String
+  GwlbVpcEndpoint2:
+    Type: String
+
+Resources:
+  # -------------- Add route for VPC
+  # Access VPC - VPC1 ApplianceSubnet RouteTable
+  # AZ1
+  VPC1TGWApplianceRoute12:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1ApplianceSubnet1RouteTable
+       DestinationCidrBlock: !Ref VPC2CIDR
+       TransitGatewayId: !Ref TGWID
+  VPC1TGWApplianceRoute13:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1ApplianceSubnet1RouteTable
+       DestinationCidrBlock: !Ref VPC3CIDR
+       TransitGatewayId: !Ref TGWID
+  VPC1TGWApplianceRoute14:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1ApplianceSubnet1RouteTable
+       DestinationCidrBlock: !Ref VPC4CIDR
+       TransitGatewayId: !Ref TGWID
+  # AZ2
+  VPC1TGWApplianceRoute22:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1ApplianceSubnet2RouteTable
+       DestinationCidrBlock: !Ref VPC2CIDR
+       TransitGatewayId: !Ref TGWID
+  VPC1TGWApplianceRoute23:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1ApplianceSubnet2RouteTable
+       DestinationCidrBlock: !Ref VPC3CIDR
+       TransitGatewayId: !Ref TGWID
+  VPC1TGWApplianceRoute24:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1ApplianceSubnet2RouteTable
+       DestinationCidrBlock: !Ref VPC4CIDR
+       TransitGatewayId: !Ref TGWID
+# Add default route to TGW for application VPC 2/3/4
+# VPC2
+  VPC2TGWRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC2TGWRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC2TGWRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC2TGWRouteTable2
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC2TGWRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC2PrivateRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC2TGWRoute4:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC2PrivateRouteTable2
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+# VPC3
+  VPC3TGWRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC3TGWRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC3TGWRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC3TGWRouteTable2
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC3TGWRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC3PrivateRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC3TGWRoute4:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC3PrivateRouteTable2
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+# VPC4
+  VPC4TGWRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC4TGWRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VP4TGWRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC4TGWRouteTable2
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC4TGWRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC4PrivateRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+  VPC4TGWRoute4:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC4PrivateRouteTable2
+       DestinationCidrBlock: 0.0.0.0/0
+       TransitGatewayId: !Ref TGWID
+
+  # GWLB Endpoint related route
+  # add route for TGW subnet
+  VPC1TGWSubnet1GWLBRoute:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1TGWSubnet1RouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       VpcEndpointId: !Ref GwlbVpcEndpoint1
+  VPC1TGWSubnet2GWLBRoute:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1TGWSubnet2RouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       VpcEndpointId: !Ref GwlbVpcEndpoint2
+
+  # add route for NAT subnet
+  # VPC 1
+  VPC1NATSubnet1GWLBRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1NATSubnet1RouteTable
+       DestinationCidrBlock: !Ref VPC2CIDR
+       VpcEndpointId: !Ref GwlbVpcEndpoint1
+  VPC1NATSubnet1GWLBRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1NATSubnet1RouteTable
+       DestinationCidrBlock: !Ref VPC3CIDR
+       VpcEndpointId: !Ref GwlbVpcEndpoint1
+  VPC1NATSubnet1GWLBRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1NATSubnet1RouteTable
+       DestinationCidrBlock: !Ref VPC4CIDR
+       VpcEndpointId: !Ref GwlbVpcEndpoint1
+  # VPC 2
+  VPC1NATSubnet2GWLBRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1NATSubnet2RouteTable
+       DestinationCidrBlock: !Ref VPC2CIDR
+       VpcEndpointId: !Ref GwlbVpcEndpoint2
+  VPC1NATSubnet2GWLBRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1NATSubnet2RouteTable
+       DestinationCidrBlock: !Ref VPC3CIDR
+       VpcEndpointId: !Ref GwlbVpcEndpoint2
+  VPC1NATSubnet2GWLBRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref VPC1NATSubnet2RouteTable
+       DestinationCidrBlock: !Ref VPC4CIDR
+       VpcEndpointId: !Ref GwlbVpcEndpoint2
