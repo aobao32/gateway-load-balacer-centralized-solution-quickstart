@@ -268,20 +268,14 @@ Resources:
       Tags:
         - Key: Name
           Value: VPC3-Application1
-      UserData: !Base64 
-        'Fn::Join':
-          - ''
-          - - |
-              #! /bin/bash
-            - |
-              yum install httpd -y
-            - |
-              systemctl restart httpd
-            - |
-              systemctl enable httpd
-            - |
-              yum update -y
-            - |+
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #! /bin/bash
+            yum install httpd -y
+            systemctl restart httpd
+            systemctl enable httpd
+            yum update -y
 
   # Application Server 2
   VPC3VM2:
@@ -306,20 +300,14 @@ Resources:
       Tags:
         - Key: Name
           Value: VPC3-Application2
-      UserData: !Base64 
-        'Fn::Join':
-          - ''
-          - - |
-              #! /bin/bash
-            - |
-              yum install httpd -y
-            - |
-              systemctl restart httpd
-            - |
-              systemctl enable httpd
-            - |
-              yum update -y
-            - |+
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #! /bin/bash
+            yum install httpd -y
+            systemctl restart httpd
+            systemctl enable httpd
+            yum update -y
 
 Outputs:
     VPC3:

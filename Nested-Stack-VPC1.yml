@@ -358,14 +358,11 @@ Resources:
       Tags:
         - Key: Name
           Value: AccessVPC-JumpServer
-      UserData: !Base64
-        'Fn::Join':
-          - ''
-          - - |
-              #! /bin/bash
-            - |
-              yum update -y
-            - |+
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #! /bin/bash
+            yum update -y
 
   # JumpServer EIP
   VPC1EIP3assignment:
@@ -425,26 +422,17 @@ Resources:
       Tags:
         - Key: Name
           Value: AccessVPC-VirtualAppliance1
-      UserData: !Base64
-        'Fn::Join':
-          - ''
-          - - |
-              #! /bin/bash
-            - |
-              yum update -y
-            - |
-              pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
-            - |
-              pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-            - |
-              pip3 install pyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
-            - |
-              yum install git -y
-            - |
-              git clone https://github.com/sentialabs/geneve-proxy.git
-            - |
-              mv geneve-proxy /root/
-            - |+
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #! /bin/bash
+            yum update -y
+            pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
+            pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+            pip3 install pyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
+            yum install git -y
+            git clone https://github.com/sentialabs/geneve-proxy.git
+            mv geneve-proxy /root/
 
   # Virtual Appliance Server 2
   VPC1VM3:
@@ -468,26 +456,17 @@ Resources:
       Tags:
         - Key: Name
           Value: AccessVPC-VirtualAppliance2
-      UserData: !Base64
-        'Fn::Join':
-          - ''
-          - - |
-              #! /bin/bash
-            - |
-              yum update -y
-            - |
-              pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
-            - |
-              pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-            - |
-              pip3 install pyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
-            - |
-              yum install git -y
-            - |
-              git clone https://github.com/sentialabs/geneve-proxy.git
-            - |
-              mv geneve-proxy /root/
-            - |+
+      UserData: 
+        Fn::Base64: 
+          !Sub |
+            #! /bin/bash
+            yum update -y
+            pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
+            pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+            pip3 install pyyaml -i https://pypi.tuna.tsinghua.edu.cn/simple
+            yum install git -y
+            git clone https://github.com/sentialabs/geneve-proxy.git
+            mv geneve-proxy /root/
 
   # -------------------------- GWLB -----------------------
   GWLB:
