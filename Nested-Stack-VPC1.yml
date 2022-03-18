@@ -17,15 +17,15 @@ Parameters:
       - t4g.small
       - c6g.medium
     ConstraintDescription: must be a valid EC2 instance type.
+  WindowsAmiId: 
+    Type: String
   JumpServerInstanceType:
     Description: Choose instance type for jumpserver
     Type: String
-    Default: t4g.micro
+    Default: t3.large
     AllowedValues:
-      - t4g.micro
-      - t4g.small
-      - c4g.medium
-      - c6g.medium
+      - t3.large
+      - t3.xlarge
     ConstraintDescription: must be a valid EC2 instance type.
   Arm64AmiId: 
     Type: String
@@ -328,10 +328,10 @@ Resources:
       VpcId: !Ref VPC1
       SecurityGroupIngress:
         - IpProtocol: tcp # Allow SSH from JumpServer SecurityGroupID in VPC1
-          FromPort: '22'
-          ToPort: '22'
+          FromPort: '3389'
+          ToPort: '3389'
           CidrIp: !Ref JumpServerAllowList
-          Description: Allow SSH from MyIP, please update it after creation
+          Description: Allow RDP from MyIP, please update it after creation
       Tags:
         - Key: Name
           Value: AccessVPC-JumpServer
@@ -341,17 +341,17 @@ Resources:
     Type: 'AWS::EC2::Instance'
     Properties:
       KeyName: !Ref EC2KEY
-      ImageId: !Ref Arm64AmiId
+      ImageId: !Ref WindowsAmiId
       InstanceType: !Ref JumpServerInstanceType
       IamInstanceProfile: !Ref SSMIAMRole
       AvailabilityZone: !Select [ 0, !GetAZs  '' ]
       SubnetId: !Ref VPC1NATSubnet1
       Monitoring: true
-      BlockDeviceMappings: # Use gp3 as root disk @2021-01-31
+      BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
             VolumeType: gp3
-            VolumeSize: 10
+            VolumeSize: 50
             DeleteOnTermination: true
       SecurityGroupIds:
         - !Ref VPC1SecurtiyGroup1
@@ -361,8 +361,11 @@ Resources:
       UserData:
         Fn::Base64: 
           !Sub |
-            #! /bin/bash
-            yum update -y
+            <powershell>
+            Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+            choco install putty -y
+            choco install vim -y
+            </powershell>
 
   # JumpServer EIP
   VPC1EIP3assignment:

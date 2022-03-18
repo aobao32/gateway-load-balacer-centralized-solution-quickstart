@@ -20,6 +20,10 @@ Parameters:
       - c6g.medium
     ConstraintDescription: must be a valid EC2 instance type.
   # Input for VPC1
+  WindowsAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Description: This SSM parameter will have latest AMI image, just keep default and DO NOT modify it.
+    Default: '/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base'
   VirtualApplianceServerInstanceType:
     Description: Choose instance type for virtual appliance server.
     Type: String
@@ -32,11 +36,10 @@ Parameters:
   JumpServerInstanceType:
     Description: Choose instance type for jumpserver
     Type: String
-    Default: t4g.micro
+    Default: t3.large
     AllowedValues:
-      - t4g.micro
-      - t4g.small
-      - c6g.medium
+      - t3.large
+      - t3.xlarge
     ConstraintDescription: must be a valid EC2 instance type.
   JumpServerAllowList:
     Description: Please enter the CIDR that allows to connect to JumpServer
@@ -164,6 +167,7 @@ Resources:
         SSMIAMRole: !GetAtt SSMStack.Outputs.SSMRole
         EC2KEY: !Ref EC2KEY
         Arm64AmiId: !Ref Arm64AmiId
+        WindowsAmiId: !Ref WindowsAmiId
         JumpServerInstanceType: !Ref JumpServerInstanceType
         VirtualApplianceServerInstanceType: !Ref VirtualApplianceServerInstanceType
         JumpServerAllowList: !Ref JumpServerAllowList
@@ -328,12 +332,7 @@ Resources:
 Outputs: 
     JumpServerPublicIP: # 堡垒机EIP,拼接登录字符串
       Description: JumpServer EIP in AccessVPC NATSubnet, single entry point for login
-      Value: !Join
-      - ''
-      - - "ssh-add "
-        -  !Ref EC2KEY
-        - ".pem;ssh -A ec2-user@"
-        - !GetAtt VPC01Stack.Outputs.VPC1JumpServerEIP
+      Value: !GetAtt VPC01Stack.Outputs.VPC1JumpServerEIP
     VPC2AppServerPrivateIP1:
       Description: VPC2 Application Server 1's Private IP
       Value: !GetAtt VPC02Stack.Outputs.VPC2PrivateIP1
