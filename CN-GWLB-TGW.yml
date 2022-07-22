@@ -142,7 +142,7 @@ Resources:
   SSMStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-SSMRole.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-SSMRole.yml
       TimeoutInMinutes: 5
       Tags:
         - Key: Name
@@ -152,7 +152,7 @@ Resources:
   TGWStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-TGW-01.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-TGW-01.yml
       TimeoutInMinutes: 5
       Tags:
         - Key: Name
@@ -181,7 +181,7 @@ Resources:
         VPC2CIDR: !Ref VPC2CIDR
         VPC3CIDR: !Ref VPC3CIDR
         VPC4CIDR: !Ref VPC4CIDR
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-VPC1.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-VPC1.yml
       TimeoutInMinutes: 15
       Tags:
         - Key: Name
@@ -207,7 +207,7 @@ Resources:
           - ''
           - - !GetAtt VPC01Stack.Outputs.VPC1JumpServerPrivateIP
             - "/32"
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-VPC2.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-VPC2.yml
       TimeoutInMinutes: 6
       Tags:
         - Key: Name
@@ -232,7 +232,7 @@ Resources:
           - ''
           - - !GetAtt VPC01Stack.Outputs.VPC1JumpServerPrivateIP
             - "/32"
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-VPC3.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-VPC3.yml
       TimeoutInMinutes: 6
       Tags:
         - Key: Name
@@ -256,7 +256,7 @@ Resources:
           - ''
           - - !GetAtt VPC01Stack.Outputs.VPC1JumpServerPrivateIP
             - "/32"
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-VPC4.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-VPC4.yml
       TimeoutInMinutes: 6
       Tags:
         - Key: Name
@@ -281,7 +281,7 @@ Resources:
         VPC4: !GetAtt VPC04Stack.Outputs.VPC4
         VPC4TGWSubnet1: !GetAtt VPC04Stack.Outputs.VPC4TGWSubnet1
         VPC4TGWSubnet2: !GetAtt VPC04Stack.Outputs.VPC4TGWSubnet2
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-TGW-02-Attachment.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-TGW-02-Attachment.yml
       TimeoutInMinutes: 10
       Tags:
         - Key: Name
@@ -323,7 +323,7 @@ Resources:
         VPC4TGWRouteTable2: !GetAtt VPC04Stack.Outputs.VPC4TGWRouteTable2
         VPC4PrivateRouteTable1: !GetAtt VPC04Stack.Outputs.VPC4PrivateRouteTable1
         VPC4PrivateRouteTable2: !GetAtt VPC04Stack.Outputs.VPC4PrivateRouteTable2
-      TemplateURL: https://myworkshop-lxy.s3.cn-north-1.amazonaws.com.cn/GWLB/V2/Nested-Stack-TGW-03-RouteTable.yml
+      TemplateURL: https://my-ab-demo.s3-ap-southeast-1.amazonaws.com/GWLB/V2/Nested-Stack-TGW-03-RouteTable.yml
       TimeoutInMinutes: 6
       Tags:
         - Key: Name

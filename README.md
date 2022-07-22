@@ -50,10 +50,10 @@ GWLB Quickstart CloudFormation Template
 
 ## 四、开启Transit Gateway的跨AZ访问
 
-Transit Gateway 默认会将流量保持在本AZ内，当结合GWLB时候，Inter-VPC的跨AZ访问会出现无法访问的问题，此时需要对GWLB所在的VPC的Transit Gateway Attachment打开Appliance Mode。参数如下：
+Transit Gateway 默认会将流量保持在本AZ内，当结合GWLB时候，Inter-VPC的跨AZ访问会出现无法访问的问题，此时需要对GWLB所在的VPC的Transit Gateway Attachment打开Appliance Mode。其他VPC不需要变更此配置。参数如下：
 
 ```
-aws ec2 modify-transit-gateway-vpc-attachment \ --transit-gateway-attachment-id tgw-attach-0253EXAMPLE \ --options ApplianceModeSupport=enable
+aws ec2 modify-transit-gateway-vpc-attachment --transit-gateway-attachment-id tgw-attach-0253EXAMPLE --options ApplianceModeSupport=enable
 ```
 
 注意本方法目前在Cloudformation接口无法调用，因此需要启动Quickstart模版完成后，通过执行上述CLI命令手工变更配置。
