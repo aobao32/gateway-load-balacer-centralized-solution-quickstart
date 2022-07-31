@@ -192,7 +192,7 @@ Resources:
        VpcEndpointId: !Ref GwlbVpcEndpoint2
 
   # add route for NAT subnet
-  # VPC 1
+  # AZ 1
   VPC1NATSubnet1GWLBRoute1:
     Type: AWS::EC2::Route
     Properties:
@@ -211,7 +211,7 @@ Resources:
        RouteTableId: !Ref VPC1NATSubnet1RouteTable
        DestinationCidrBlock: !Ref VPC4CIDR
        VpcEndpointId: !Ref GwlbVpcEndpoint1
-  # VPC 2
+  # AZ 2
   VPC1NATSubnet2GWLBRoute1:
     Type: AWS::EC2::Route
     Properties:
